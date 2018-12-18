@@ -1,4 +1,5 @@
 import { LeafletMouseEvent, popup } from "leaflet";
+import _ from "lodash";
 import React, { Component, createRef, SyntheticEvent } from "react";
 import {
   Button,
@@ -10,8 +11,8 @@ import {
 import { Map, Marker, Popup, TileLayer } from "react-leaflet";
 import { FishNames } from "../Constants/Fishes";
 import { IMarker, IPopup } from "../Interfaces/MapInterfaces";
+import FormUtilities from "../Utilities/FormUtilities";
 import MapUtilities from "../Utilities/MapUtilities";
-
 interface IState {
   centerLat: number;
   centerLng: number;
@@ -65,12 +66,30 @@ export default class SimpleMap extends Component<{}, IState> {
 
   private handleSaveForm = (e: SyntheticEvent) => {
     e.preventDefault();
-    console.log(e);
+    console.log(this.state.markers);
   }
 
   private handleRadioChange = (fishingSpotGrade: number, markerId: string) => {
     console.log(fishingSpotGrade);
     console.log(markerId);
+    if (this.state.markers) {
+      const existingMarkerIndex = _.findIndex(
+        this.state.markers,
+        (marker) => marker.markerId === markerId,
+      );
+      if (existingMarkerIndex !== -1) {
+        const markerWithNewGrade = FormUtilities.changeFishSpotGrade(
+          this.state.markers[existingMarkerIndex],
+          fishingSpotGrade,
+        );
+        if (markerWithNewGrade) {
+          _.remove(this.state.markers, (marker) => marker.markerId === markerId);
+          const newMarkers = [...this.state.markers];
+          newMarkers.push(markerWithNewGrade);
+          this.setState({ markers: newMarkers });
+        }
+      }
+    }
   }
 
   private handleCheckBoxChange = (fishName: string, markerId: string) => {
@@ -79,7 +98,7 @@ export default class SimpleMap extends Component<{}, IState> {
   }
 
   private handleClick = (e: LeafletMouseEvent) => {
-    const newPopup: IPopup = { explanation: "Test" };
+    const newPopup: IPopup = { availableFishes: [], spotGrade: 0 };
     const newMarker = MapUtilities.CreateMarkerFromClickEvent(e, newPopup);
     const markers = [];
     if (this.state.markers) {
@@ -103,6 +122,7 @@ export default class SimpleMap extends Component<{}, IState> {
                       onChange={() =>
                         this.handleCheckBoxChange(name, marker.markerId)
                       }
+                      checked={FormUtilities.fishExistsInMarker(marker, name)}
                       key={nameIndex}
                     >
                       {name}

@@ -1,5 +1,6 @@
 export interface IPopup {
-  explanation: string;
+  availableFishes: string[];
+  spotGrade: number;
 }
 
 export interface IMarker {
