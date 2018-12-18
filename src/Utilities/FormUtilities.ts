@@ -22,4 +22,25 @@ export default class FormUtilities {
       return newMarker;
     }
   }
+
+  public static getAvailableFishes(marker: IMarker, fishName: string): IMarker {
+    const { popupData } = marker;
+    if (this.fishExistsInMarker(marker, fishName)) {
+      _.remove(
+        popupData.availableFishes,
+        (removedFishName) => removedFishName === fishName,
+      );
+      popupData.availableFishes = [...popupData.availableFishes];
+    } else {
+      popupData.availableFishes.push(fishName);
+    }
+    const newMarker = {
+      ...marker,
+      popupData: {
+        ...marker.popupData,
+        availableFishes: [...popupData.availableFishes],
+      },
+    };
+    return newMarker;
+  }
 }

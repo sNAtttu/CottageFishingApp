@@ -70,8 +70,6 @@ export default class SimpleMap extends Component<{}, IState> {
   }
 
   private handleRadioChange = (fishingSpotGrade: number, markerId: string) => {
-    console.log(fishingSpotGrade);
-    console.log(markerId);
     if (this.state.markers) {
       const existingMarkerIndex = _.findIndex(
         this.state.markers,
@@ -93,8 +91,24 @@ export default class SimpleMap extends Component<{}, IState> {
   }
 
   private handleCheckBoxChange = (fishName: string, markerId: string) => {
-    console.log(fishName);
-    console.log(markerId);
+    if (this.state.markers) {
+      const existingMarkerIndex = _.findIndex(
+        this.state.markers,
+        (marker) => marker.markerId === markerId,
+      );
+      if (existingMarkerIndex !== -1) {
+        const markerWithNewFishes = FormUtilities.getAvailableFishes(
+          this.state.markers[existingMarkerIndex],
+          fishName,
+        );
+        if (markerWithNewFishes) {
+          _.remove(this.state.markers, (marker) => marker.markerId === markerId);
+          const newMarkers = [...this.state.markers];
+          newMarkers.push(markerWithNewFishes);
+          this.setState({ markers: newMarkers });
+        }
+      }
+    }
   }
 
   private handleClick = (e: LeafletMouseEvent) => {
