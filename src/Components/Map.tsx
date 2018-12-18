@@ -1,7 +1,14 @@
-import { LeafletMouseEvent } from "leaflet";
-import React, { Component, createRef } from "react";
-import { render } from "react-dom";
-import { LeafletEvents, Map, Marker, Popup, TileLayer } from "react-leaflet";
+import { LeafletMouseEvent, popup } from "leaflet";
+import React, { Component, createRef, SyntheticEvent } from "react";
+import {
+  Button,
+  Checkbox,
+  ControlLabel,
+  FormGroup,
+  Radio,
+} from "react-bootstrap";
+import { Map, Marker, Popup, TileLayer } from "react-leaflet";
+import { FishNames } from "../Constants/Fishes";
 import { IMarker, IPopup } from "../Interfaces/MapInterfaces";
 import MapUtilities from "../Utilities/MapUtilities";
 
@@ -14,6 +21,9 @@ interface IState {
 
 const mapStyle = {
   height: "100vh",
+};
+const popupFormStyle = {
+  width: "200px",
 };
 
 export default class SimpleMap extends Component<{}, IState> {
@@ -28,17 +38,6 @@ export default class SimpleMap extends Component<{}, IState> {
     };
   }
 
-  public handleClick = (e: LeafletMouseEvent) => {
-    const newPopup: IPopup = { explanation: "Test" };
-    const newMarker = MapUtilities.CreateMarkerFromClickEvent(e, newPopup);
-    const markers = [];
-    if (this.state.markers) {
-      markers.push(...this.state.markers);
-    }
-    markers.push(newMarker);
-    this.setState({ markers });
-  }
-
   public render() {
     const centerPos: [number, number] = [
       this.state.centerLat,
@@ -46,13 +45,7 @@ export default class SimpleMap extends Component<{}, IState> {
     ];
     let markers = null;
     if (this.state.markers) {
-      markers = this.state.markers.map((marker, index) => {
-        return (
-          <Marker key={index} position={[marker.lat, marker.lng]}>
-            <Popup>{marker.popupData.explanation}</Popup>
-          </Marker>
-        );
-      });
+      markers = this.state.markers.map(this.mapMarkerDataToElement);
     }
     return (
       <Map
@@ -67,6 +60,85 @@ export default class SimpleMap extends Component<{}, IState> {
         />
         {markers}
       </Map>
+    );
+  }
+
+  private handleSaveForm = (e: SyntheticEvent) => {
+    e.preventDefault();
+    console.log(e);
+  }
+
+  private handleRadioChange = (fishingSpotGrade: number, markerId: string) => {
+    console.log(fishingSpotGrade);
+    console.log(markerId);
+  }
+
+  private handleCheckBoxChange = (fishName: string, markerId: string) => {
+    console.log(fishName);
+    console.log(markerId);
+  }
+
+  private handleClick = (e: LeafletMouseEvent) => {
+    const newPopup: IPopup = { explanation: "Test" };
+    const newMarker = MapUtilities.CreateMarkerFromClickEvent(e, newPopup);
+    const markers = [];
+    if (this.state.markers) {
+      markers.push(...this.state.markers);
+    }
+    markers.push(newMarker);
+    this.setState({ markers });
+  }
+
+  private mapMarkerDataToElement = (marker: IMarker, markerIndex: number) => {
+    return (
+      <Marker key={markerIndex} position={[marker.lat, marker.lng]}>
+        <Popup>
+          <form onSubmit={this.handleSaveForm} style={popupFormStyle}>
+            <FormGroup>
+              <ControlLabel>Kalalajit</ControlLabel>
+              <FormGroup>
+                {FishNames.map((name, nameIndex) => {
+                  return (
+                    <Checkbox
+                      onChange={() =>
+                        this.handleCheckBoxChange(name, marker.markerId)
+                      }
+                      key={nameIndex}
+                    >
+                      {name}
+                    </Checkbox>
+                  );
+                })}
+              </FormGroup>
+              <ControlLabel>Arvosana</ControlLabel>
+              <FormGroup>
+                <Radio
+                  value="0"
+                  name="radioGroup"
+                  onChange={() => this.handleRadioChange(0, marker.markerId)}
+                >
+                  Huono
+                </Radio>
+                <Radio
+                  value="1"
+                  name="radioGroup"
+                  onChange={() => this.handleRadioChange(1, marker.markerId)}
+                >
+                  Hyvä
+                </Radio>
+                <Radio
+                  value="2"
+                  name="radioGroup"
+                  onChange={() => this.handleRadioChange(2, marker.markerId)}
+                >
+                  Kala hyppää veneeseen
+                </Radio>
+              </FormGroup>
+            </FormGroup>
+            <Button type="submit">Tallenna</Button>
+          </form>
+        </Popup>
+      </Marker>
     );
   }
 }
