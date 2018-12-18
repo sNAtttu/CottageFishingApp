@@ -110,7 +110,13 @@ export default class SimpleMap extends Component<{}, IState> {
       }
     }
   }
-
+  private handleMarkerRemove = (markerId: string) => {
+    if (this.state.markers) {
+      _.remove(this.state.markers, (marker) => marker.markerId === markerId);
+      const remainingMarkers = [...this.state.markers];
+      this.setState({ markers: remainingMarkers });
+    }
+  }
   private handleClick = (e: LeafletMouseEvent) => {
     const newPopup: IPopup = { availableFishes: [], spotGrade: 0 };
     const newMarker = MapUtilities.CreateMarkerFromClickEvent(e, newPopup);
@@ -170,6 +176,12 @@ export default class SimpleMap extends Component<{}, IState> {
               </FormGroup>
             </FormGroup>
             <Button type="submit">Tallenna</Button>
+            <Button
+              style={{ float: "right" }}
+              onClick={() => this.handleMarkerRemove(marker.markerId)}
+            >
+              Poista
+            </Button>
           </form>
         </Popup>
       </Marker>
