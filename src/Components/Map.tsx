@@ -6,12 +6,13 @@ import {
   Checkbox,
   ControlLabel,
   FormGroup,
-  Radio,
+  Radio
 } from "react-bootstrap";
 import { Map, Marker, Popup, TileLayer } from "react-leaflet";
 import { FishNames } from "../Constants/Fishes";
 import { IMarker, IPopup } from "../Interfaces/MapInterfaces";
 import FormUtilities from "../Utilities/FormUtilities";
+import HttpService from "../Utilities/HttpService";
 import MapUtilities from "../Utilities/MapUtilities";
 interface IState {
   centerLat: number;
@@ -21,10 +22,10 @@ interface IState {
 }
 
 const mapStyle = {
-  height: "100vh",
+  height: "100vh"
 };
 const popupFormStyle = {
-  width: "200px",
+  width: "200px"
 };
 
 export default class SimpleMap extends Component<{}, IState> {
@@ -35,14 +36,20 @@ export default class SimpleMap extends Component<{}, IState> {
       centerLat: 61.944069,
       centerLng: 28.81044,
       markers: null,
-      zoom: 15,
+      zoom: 15
     };
+  }
+
+  public componentDidMount() {
+    HttpService.getMarkersFromDatabase().then((markers) =>
+      this.setState({ markers })
+    );
   }
 
   public render() {
     const centerPos: [number, number] = [
       this.state.centerLat,
-      this.state.centerLng,
+      this.state.centerLng
     ];
     let markers = null;
     if (this.state.markers) {
@@ -64,21 +71,21 @@ export default class SimpleMap extends Component<{}, IState> {
     );
   }
 
-  private handleSaveForm = (e: SyntheticEvent) => {
+  private handleSaveForm = (e: SyntheticEvent, marker: IMarker) => {
     e.preventDefault();
-    console.log(this.state.markers);
+    HttpService.postDraftDeck(marker);
   }
 
   private handleRadioChange = (fishingSpotGrade: number, markerId: string) => {
     if (this.state.markers) {
       const existingMarkerIndex = _.findIndex(
         this.state.markers,
-        (marker) => marker.markerId === markerId,
+        (marker) => marker.markerId === markerId
       );
       if (existingMarkerIndex !== -1) {
         const markerWithNewGrade = FormUtilities.changeFishSpotGrade(
           this.state.markers[existingMarkerIndex],
-          fishingSpotGrade,
+          fishingSpotGrade
         );
         if (markerWithNewGrade) {
           _.remove(this.state.markers, (marker) => marker.markerId === markerId);
@@ -94,12 +101,12 @@ export default class SimpleMap extends Component<{}, IState> {
     if (this.state.markers) {
       const existingMarkerIndex = _.findIndex(
         this.state.markers,
-        (marker) => marker.markerId === markerId,
+        (marker) => marker.markerId === markerId
       );
       if (existingMarkerIndex !== -1) {
         const markerWithNewFishes = FormUtilities.getAvailableFishes(
           this.state.markers[existingMarkerIndex],
-          fishName,
+          fishName
         );
         if (markerWithNewFishes) {
           _.remove(this.state.markers, (marker) => marker.markerId === markerId);
@@ -132,7 +139,10 @@ export default class SimpleMap extends Component<{}, IState> {
     return (
       <Marker key={markerIndex} position={[marker.lat, marker.lng]}>
         <Popup>
-          <form onSubmit={this.handleSaveForm} style={popupFormStyle}>
+          <form
+            onSubmit={(e) => this.handleSaveForm(e, marker)}
+            style={popupFormStyle}
+          >
             <FormGroup>
               <ControlLabel>Kalalajit</ControlLabel>
               <FormGroup>
@@ -154,6 +164,7 @@ export default class SimpleMap extends Component<{}, IState> {
               <FormGroup>
                 <Radio
                   value="0"
+                  checked={marker.popupData.spotGrade === 0}
                   name="radioGroup"
                   onChange={() => this.handleRadioChange(0, marker.markerId)}
                 >
@@ -161,6 +172,7 @@ export default class SimpleMap extends Component<{}, IState> {
                 </Radio>
                 <Radio
                   value="1"
+                  checked={marker.popupData.spotGrade === 1}
                   name="radioGroup"
                   onChange={() => this.handleRadioChange(1, marker.markerId)}
                 >
@@ -168,6 +180,7 @@ export default class SimpleMap extends Component<{}, IState> {
                 </Radio>
                 <Radio
                   value="2"
+                  checked={marker.popupData.spotGrade === 2}
                   name="radioGroup"
                   onChange={() => this.handleRadioChange(2, marker.markerId)}
                 >
