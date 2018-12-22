@@ -1,4 +1,4 @@
-import { LeafletMouseEvent, popup } from "leaflet";
+import { LeafletMouseEvent, Map as IMap } from "leaflet";
 import _ from "lodash";
 import React, { Component, createRef, SyntheticEvent } from "react";
 import {
@@ -29,7 +29,7 @@ const popupFormStyle = {
 };
 
 export default class SimpleMap extends Component<{}, IState> {
-  public mapRef = createRef<Map>();
+  public leafletMap: IMap | null = null;
   constructor(props: any) {
     super(props);
     this.state = {
@@ -41,11 +41,13 @@ export default class SimpleMap extends Component<{}, IState> {
   }
 
   public componentDidMount() {
+    console.log(this.leafletMap);
     HttpService.getMarkersFromDatabase().then((markers) =>
       this.setState({ markers })
     );
   }
-
+  public setLeafletMapRef = (map: any) =>
+    (this.leafletMap = map && map.leafletElement)
   public render() {
     const centerPos: [number, number] = [
       this.state.centerLat,
@@ -57,6 +59,7 @@ export default class SimpleMap extends Component<{}, IState> {
     }
     return (
       <Map
+        ref={this.setLeafletMapRef}
         center={centerPos}
         zoom={this.state.zoom}
         style={mapStyle}
@@ -71,9 +74,16 @@ export default class SimpleMap extends Component<{}, IState> {
     );
   }
 
+  private closePopup = () => {
+    if (this.leafletMap !== null) {
+      this.leafletMap.closePopup();
+    }
+  }
+
   private handleSaveForm = (e: SyntheticEvent, marker: IMarker) => {
     e.preventDefault();
-    HttpService.postDraftDeck(marker);
+    HttpService.postMarker(marker);
+    this.closePopup();
   }
 
   private handleRadioChange = (fishingSpotGrade: number, markerId: string) => {
@@ -118,11 +128,17 @@ export default class SimpleMap extends Component<{}, IState> {
     }
   }
   private handleMarkerRemove = (markerId: string) => {
-    if (this.state.markers) {
-      _.remove(this.state.markers, (marker) => marker.markerId === markerId);
-      const remainingMarkers = [...this.state.markers];
-      this.setState({ markers: remainingMarkers });
-    }
+    HttpService.deleteMarker(markerId).then((response) => {
+      if (this.state.markers) {
+        _.remove(
+          this.state.markers,
+          (marker: IMarker) => marker.markerId === response
+        );
+        const remainingMarkers = [...this.state.markers];
+        this.closePopup();
+        this.setState({ markers: remainingMarkers });
+      }
+    });
   }
   private handleClick = (e: LeafletMouseEvent) => {
     const newPopup: IPopup = { availableFishes: [], spotGrade: 0 };
